@@ -1,0 +1,49 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+env/
+.venv/
+.Python
+
+# ---- Datasets (large, and typically not yours to redistribute) ----
+data/
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.png
+!webapp/frontend/**/*.png
+
+# ---- Trained model checkpoints (large binaries, 80-200+ MB each) ----
+outputs/*.pth
+outputs/comparison_results.json
+outputs/model_comparison.png
+outputs/class_names.json
+outputs/history_*.json
+confusion_matrix*.png
+confusion_matrix*.json
+
+# ---- macOS junk ----
+.DS_Store
+._*
+
+# ---- Editor/IDE ----
+.vscode/
+.idea/
+*.swp
+
+# ---- Secrets (never commit these) ----
+.env
+*.pem
+*.key
+
+# ---- Duplicate/leftover project copies (do not commit stray dirs like these) ----
+files (*)/
+plant_disease_project-2/
+
+# ---- Jupyter ----
+.ipynb_checkpoints/

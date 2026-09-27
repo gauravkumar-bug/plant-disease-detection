@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaf Scope — Plant Disease Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #2b2318;
+    --bark: #4a3f2f;
+    --leaf-deep: #2f4d33;
+    --leaf: #4a7048;
+    --leaf-light: #8fae6f;
+    --cream: #f3efe4;
+    --paper: #faf8f2;
+    --amber: #b9772e;
+    --rust: #a3432c;
+    --line: #d9d1bd;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--soil);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+  }
+
+  .kicker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--leaf-deep);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1.1;
+    margin: 0 0 14px;
+    color: var(--soil);
+  }
+
+  .lede {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--bark);
+    max-width: 46ch;
+    margin: 0;
+  }
+
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--bark);
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--line);
+    flex-shrink: 0;
+  }
+  .dot.online { background: var(--leaf); }
+  .dot.offline { background: var(--rust); }
+
+  .stage {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stage-empty {
+    padding: 56px 24px;
+    text-align: center;
+  }
+
+  .stage-empty .glyph {
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 20px;
+    color: var(--leaf);
+  }
+
+  .stage-empty p {
+    margin: 0 0 24px;
+    color: var(--bark);
+    font-size: 15px;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14.5px;
+    font-weight: 500;
+    padding: 12px 20px;
+    border: 1px solid var(--soil);
+    background: var(--soil);
+    color: var(--paper);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  button:hover { background: var(--leaf-deep); border-color: var(--leaf-deep); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.secondary {
+    background: transparent;
+    color: var(--soil);
+    border: 1px solid var(--bark);
+  }
+  button.secondary:hover { background: var(--paper); border-color: var(--soil); }
+
+  input[type="file"] { display: none; }
+
+  video, canvas, img.preview {
+    width: 100%;
+    display: block;
+  }
+
+  .camera-view { position: relative; }
+
+  .capture-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: var(--soil);
+  }
+
+  .preview-wrap { position: relative; }
+
+  .preview-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--soil);
+  }
+
+  .preview-actions span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--leaf-light);
+  }
+
+  .results {
+    margin-top: 28px;
+  }
+
+  .results h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--bark);
+    margin: 0 0 16px;
+  }
+
+  .consensus-box {
+    padding: 14px 16px;
+    background: var(--leaf-deep);
+    color: var(--paper);
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .consensus-box strong { font-weight: 600; }
+  .consensus-box .consensus-tally {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--leaf-light);
+    display: block;
+    margin-top: 3px;
+  }
+
+  .result-row {
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+  }
+  .result-row:last-child { border-bottom: 1px solid var(--line); }
+
+  .result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .result-model {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: var(--amber);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .result-name {
+    font-size: 15px;
+    color: var(--soil);
+    font-weight: 500;
+  }
+
+  .result-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--leaf-deep);
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    height: 5px;
+    background: var(--line);
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--leaf);
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0%;
+  }
+
+  .result-row.agrees .bar-fill { background: var(--leaf-deep); }
+  .result-row.agrees .result-name { font-weight: 600; }
+
+  .top-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--paper);
+    background: var(--leaf-deep);
+    padding: 3px 8px;
+    margin-left: 10px;
+    transform: translateY(-1px);
+  }
+
+  .model-error {
+    font-size: 13px;
+    color: var(--rust);
+    font-style: italic;
+  }
+
+  .error-box {
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: #f6e9e4;
+    border: 1px solid var(--rust);
+    color: #7a2c17;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .loading-line {
+    margin-top: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--bark);
+  }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--bark);
+    line-height: 1.6;
+  }
+
+  footer code {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--paper);
+    padding: 1px 5px;
+    border: 1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Leaf diagnostics · local models</p>
+      <h1>Point a leaf at the camera.</h1>
+      <p class="lede">Upload a photo or capture one live — every trained model (AlexNet, VGG16, ResNet50, MobileNetV2, EfficientNetV2-S, EfficientNetV2-M) will give its own separate diagnosis for Tomato, Potato, or Pepper leaves.</p>
+      <div class="status-line">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">Checking connection to model server…</span>
+      </div>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="stage-empty" id="stage-empty">
+        <svg class="glyph" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 4C13 4 6 13 6 24c0 6 2.5 11 6.5 15L24 44l11.5-5C39.5 35 42 30 42 24 42 13 35 4 24 4Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M24 10v28M24 10c-6 4-9 9-9 15M24 10c6 4 9 9 9 15" stroke="currentColor" stroke-width="1.4" opacity="0.6"/>
+        </svg>
+        <p>No image selected yet.</p>
+        <div class="action-row">
+          <button id="btn-upload">Upload a photo</button>
+          <button class="secondary" id="btn-camera">Use camera</button>
+        </div>
+        <input type="file" id="file-input" accept="image/*">
+      </div>
+
+      <div class="camera-view" id="camera-view" style="display:none;">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="capture-bar">
+          <button id="btn-shoot">Capture</button>
+          <button class="secondary" id="btn-camera-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div class="preview-wrap" id="preview-wrap" style="display:none;">
+        <img class="preview" id="preview-img" alt="Selected leaf photo">
+        <div class="preview-actions">
+          <span id="preview-label">image ready</span>
+          <div class="action-row" style="gap:8px;">
+            <button class="secondary" id="btn-retake">Retake</button>
+            <button id="btn-analyze">Analyze</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div id="loading" class="loading-line" style="display:none;">Running the model…</div>
+    <div id="error-box" class="error-box" style="display:none;"></div>
+
+    <div class="results" id="results" style="display:none;">
+      <h2>Each model's own diagnosis</h2>
+      <div id="results-list"></div>
+    </div>
+
+    <footer>
+      Model server expected at <code>http://localhost:8000</code>. Every trained model gives its own separate answer above — nothing is averaged. Works best with clear, well-lit, close-up photos of a single leaf. Trained on Tomato, Potato, and Pepper — other plants will still get a best-guess match from that set.
+    </footer>
+  </div>
+
+<script>
+const API_BASE = "http://localhost:8000";
+
+const els = {
+  statusDot: document.getElementById("status-dot"),
+  statusText: document.getElementById("status-text"),
+  stageEmpty: document.getElementById("stage-empty"),
+  cameraView: document.getElementById("camera-view"),
+  previewWrap: document.getElementById("preview-wrap"),
+  previewImg: document.getElementById("preview-img"),
+  previewLabel: document.getElementById("preview-label"),
+  video: document.getElementById("video"),
+  canvas: document.getElementById("canvas"),
+  fileInput: document.getElementById("file-input"),
+  btnUpload: document.getElementById("btn-upload"),
+  btnCamera: document.getElementById("btn-camera"),
+  btnShoot: document.getElementById("btn-shoot"),
+  btnCameraCancel: document.getElementById("btn-camera-cancel"),
+  btnRetake: document.getElementById("btn-retake"),
+  btnAnalyze: document.getElementById("btn-analyze"),
+  loading: document.getElementById("loading"),
+  errorBox: document.getElementById("error-box"),
+  results: document.getElementById("results"),
+  resultsList: document.getElementById("results-list"),
+};
+
+let currentBlob = null;
+let stream = null;
+
+function showPanel(name) {
+  els.stageEmpty.style.display = name === "empty" ? "block" : "none";
+  els.cameraView.style.display = name === "camera" ? "block" : "none";
+  els.previewWrap.style.display = name === "preview" ? "block" : "none";
+}
+
+function resetResults() {
+  els.results.style.display = "none";
+  els.errorBox.style.display = "none";
+  els.resultsList.innerHTML = "";
+}
+
+async function checkHealth() {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    if (data.status === "ok") {
+      els.statusDot.className = "dot online";
+      els.statusText.textContent = `Model server online — ${data.loaded_models.length} model(s) on ${data.device}`;
+    } else {
+      throw new Error("no models loaded");
+    }
+  } catch (e) {
+    els.statusDot.className = "dot offline";
+    els.statusText.textContent = "Model server not reachable. Start it, then reload this page.";
+  }
+}
+checkHealth();
+
+els.btnUpload.addEventListener("click", () => els.fileInput.click());
+els.fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) loadPreview(file);
+});
+
+function loadPreview(blob) {
+  currentBlob = blob;
+  const url = URL.createObjectURL(blob);
+  els.previewImg.src = url;
+  els.previewLabel.textContent = blob.name || "captured photo";
+  resetResults();
+  showPanel("preview");
+}
+
+els.btnCamera.addEventListener("click", async () => {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    els.video.srcObject = stream;
+    showPanel("camera");
+  } catch (e) {
+    els.errorBox.style.display = "block";
+    els.errorBox.textContent = "Could not access the camera. Check your browser's camera permission for this page.";
+  }
+});
+
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+  }
+}
+
+els.btnCameraCancel.addEventListener("click", () => {
+  stopCamera();
+  showPanel("empty");
+});
+
+els.btnShoot.addEventListener("click", () => {
+  const video = els.video;
+  const canvas = els.canvas;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext("2d").drawImage(video, 0, 0);
+  canvas.toBlob((blob) => {
+    stopCamera();
+    loadPreview(blob);
+  }, "image/jpeg", 0.92);
+});
+
+els.btnRetake.addEventListener("click", () => {
+  currentBlob = null;
+  resetResults();
+  showPanel("empty");
+});
+
+els.btnAnalyze.addEventListener("click", async () => {
+  if (!currentBlob) return;
+
+  resetResults();
+  els.loading.style.display = "block";
+  els.btnAnalyze.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append("file", currentBlob, "leaf.jpg");
+
+    const res = await fetch(`${API_BASE}/predict`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Server returned ${res.status}`);
+    }
+
+    const data = await res.json();
+    renderResults(data.results, data.consensus);
+  } catch (e) {
+    els.errorBox.style.display = "block";
+    els.errorBox.textContent = `Could not get a prediction: ${e.message}`;
+  } finally {
+    els.loading.style.display = "none";
+    els.btnAnalyze.disabled = false;
+  }
+});
+
+const ARCH_LABELS = {
+  alexnet: "AlexNet",
+  vgg16: "VGG16",
+  resnet50: "ResNet50",
+  mobilenet: "MobileNetV2",
+  efficientnet_v2_s: "EfficientNetV2-S",
+  efficientnet_v2_m: "EfficientNetV2-M",
+};
+
+function tidyName(className) {
+  return className.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function renderResults(results, consensus) {
+  els.resultsList.innerHTML = "";
+  els.results.style.display = "block";
+
+  if (consensus) {
+    const box = document.createElement("div");
+    box.className = "consensus-box";
+    box.innerHTML = `
+      <strong>${tidyName(consensus.class_name)}</strong> — the most common answer
+      <span class="consensus-tally">${consensus.agree_count} of ${consensus.total_models} models agree</span>
+    `;
+    els.resultsList.appendChild(box);
+  }
+
+  results.forEach((r) => {
+    const row = document.createElement("div");
+    const agrees = consensus && r.class_name === consensus.class_name;
+    row.className = "result-row" + (agrees ? " agrees" : "");
+
+    const modelLabel = ARCH_LABELS[r.arch] || r.arch;
+
+    if (r.error) {
+      row.innerHTML = `
+        <span class="result-model">${modelLabel}</span>
+        <span class="model-error">Could not run this model: ${r.error}</span>
+      `;
+      els.resultsList.appendChild(row);
+      return;
+    }
+
+    const displayName = tidyName(r.class_name);
+
+    row.innerHTML = `
+      <span class="result-model">${modelLabel}</span>
+      <div class="result-top">
+        <span class="result-name">${displayName}${agrees ? '<span class="top-badge">majority</span>' : ""}</span>
+        <span class="result-pct">${r.confidence.toFixed(2)}%</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill"></div></div>
+    `;
+    els.resultsList.appendChild(row);
+
+    requestAnimationFrame(() => {
+      const fill = row.querySelector(".bar-fill");
+      if (fill) fill.style.width = `${r.confidence}%`;
+    });
+  });
+}
+</script>
+</body>
+</html>
